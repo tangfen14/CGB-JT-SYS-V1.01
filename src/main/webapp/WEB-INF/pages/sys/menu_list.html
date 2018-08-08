@@ -1,0 +1,201 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">菜单管理</h3>
+
+				<div class="box-tools">
+					<div class="input-group input-group-sm" style="width: 100px;">
+						<div class="input-group-btn">
+						
+							<button type="button" 
+							class="btn btn-default btn-delete">删除</button>
+							<button type="button" class="btn btn-default btn-add">添加</button>
+							<button type="button" class="btn btn-default btn-update">修改</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /.box-header -->
+		<div class="box-body table-responsive no-padding">
+          <table id="menuTable" class="table table-hover">
+        	<thead>
+	        <tr><!-- 此tr下的th会由下面的columns动态生成 -->
+		      <th data-field="selectItem" data-checkbox="true"></th>
+	        </tr>
+	     </thead>
+         </table>
+        </div>
+		</div>
+		<!-- /.box -->
+	</div>
+</div>
+<!-- 下面的树结构引入是jquery的一个扩展插件,使用这个插件,以树结构的形式来呈现菜单信息 -->
+<script type="text/javascript" src="bower_components/treegrid/jquery.treegrid.extension.js"></script>
+<script type="text/javascript" src="bower_components/treegrid/jquery.treegrid.min.js"></script>
+<script type="text/javascript" src="bower_components/treegrid/tree.table.js"></script>
+<script type="text/javascript">
+/**
+ * 初始化表格的列,这是树结构的一个字段信息
+ 会动态生成结构到上面的selectItem中
+ 下列格式来自官方demo--->treeGrid(jquery的扩展的一个网格树插件)
+ */
+var columns = [
+{
+	field : 'selectItem',
+	radio : true   //单选
+},
+{
+	title : '菜单ID',  //相当于之前的名字
+	field : 'id',     //上面名字对应的值(就是我们查询保存的map中的k, 再通过K(id) 来取值)
+	visible : false,	//是否可见
+	align : 'center',//内容水平居中
+	valign : 'middle',//内容垂直居中
+	width : '80px'//宽度
+},
+{
+	title : '菜单名称',
+	field : 'name',
+	align : 'center',
+	valign : 'middle',
+	sortable : true,//是否可排序
+	width : '130px'
+},
+{
+	title : '上级菜单',
+	field : 'parentName',
+	align : 'center',
+	valign : 'middle',
+	sortable : true,
+	width : '100px'
+},
+{
+	title : '类型',
+	field : 'type',
+	align : 'center',
+	valign : 'middle',
+	sortable : true,
+	width : '70px',
+	formatter : function(item, index) {
+		if (item.type == 1) {
+			return '<span class="label label-success">菜单</span>';
+		}
+		if (item.type == 2) {
+			return '<span class="label label-warning">按钮</span>';
+		}
+	}
+}, 
+{
+	title : '排序号',
+	field : 'sort',
+	align : 'center',
+	valign : 'middle',
+	sortable : true,
+	width : '70px'
+}, 
+{
+	title : '菜单URL',
+	field : 'url',
+	align : 'center',
+	valign : 'middle',
+	sortable : true,
+	width : '160px'
+}, 
+{
+	title : '授权标识',
+	field : 'permission',
+	align : 'center',
+	valign : 'middle',
+	sortable : true
+} ];
+
+ 
+//下面就相当于  $(function(){}  );
+$(document).ready(function(){
+	 $(".input-group-btn")
+	 .on("click",'.btn-delete',doDeleteObject)
+	 .on("click",".btn-add,.btn-update",doLoadEditUI);
+	
+	 doGetObjects();
+});
+
+//加载点击按钮后的添加修改页面
+function doLoadEditUI(){
+	var title;
+	if($(this).hasClass("btn-add")){
+		title="添加菜单"
+	}else if($(this).hasClass("btn-update")){
+		title="修改菜单"
+		//获取当前行记录
+		var rowData=doGetCheckedItem();
+		//将记录绑定#mainContentId对应的对象上,(因为点击修改后修改页面
+		//执行的是load函数,load函数的特点是会代替原先页面,因此将数据绑定到主内容div体上比较好)
+	    $("#mainContentId").data("rowData",rowData);
+	}
+	var url="menu/doMenuEditUI.do";
+	$("#mainContentId").load(url,function(){
+		$(".box-title").html(title);
+	})
+};
+//获取选中行的数据记录
+function doGetCheckedItem(){
+	var tr=
+		//这里的tbody在树中封装的,不是我们写的,是第三方生成的,可以在源码中找到
+	$("tbody input[type='radio']:checked")
+	.parents("tr");
+	var rowData=tr.data("rowData");
+	console.log(rowData);
+	return rowData;
+}
+
+
+//执行删除操作
+function doDeleteObject(){
+	//1.获取选中的id
+	var id=getCheckedId();
+	if(!id){
+		alert("请先选择");
+		return;
+	}
+	//2.异步提交请求删除对象
+	var url="menu/doDeleteObject.do";
+	var params={"id":id};
+	$.post(url,params,function(result){
+		if(result.state==1){
+			alert(result.message);
+			doGetObjects();
+		}else{
+			alert(result.message);
+		}
+	})
+}
+//获取选中记录的id值
+function getCheckedId(){
+	//1.获取选中的记录,返回值为一个数组.
+	var selections=$("#menuTable")
+	//bootstrapTreeTable是treeGrid插件内部定义的jquery扩展函数
+	//getSelections为扩展函数内部要调用的一个方法,这一句固定写法
+	.bootstrapTreeTable("getSelections");
+	//2.对记录进行判定(此项目设计的就是单选的 )
+	if(selections.length==1)
+	return selections[0].id;
+}
+
+
+
+//定义页面数据加载方法
+function doGetObjects(){
+	//1.构建treeTable对象(借助第三方插件treegrid)
+	var treeTable=new TreeTable("menuTable",//tableId
+    		"menu/doFindObjects.do",//url
+    		 columns);
+	//2.设置treeTable(可选的)
+	//例如设置在第3列展开树结构(不写这句的话默认在第1列展开)
+	 treeTable.setExpandColumn(2);
+	//3.发异步请求初始化table对象
+	treeTable.init();//底层发ajax异步请求访问服务端
+}
+
+
+
+</script>

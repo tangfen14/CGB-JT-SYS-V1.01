@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jt.sys.dao.SysRoleDao">
+ 	<update id="updateObject" parameterType="com.jt.sys.entity.SysRole">
+           update sys_roles
+           <set>
+            <if test="name!=null and name!=''">
+             name=#{name},
+            </if>
+            <if test="note!=null and note!=''">
+             note=#{note},
+            </if>
+            <if test="modifiedUser!=null and modifiedUser!=''">
+             modifiedUser=#{modifiedUser},
+            </if>
+             modifiedTime=now()
+           </set>
+           where id=#{id}
+ </update>
+  
+ <!--    基于id查询角色自身信息 -->
+    <select id="findObjectById"
+            resultType="com.jt.sys.entity.SysRole">
+         select *
+         from sys_roles
+         where id=#{id}
+    </select>
+     
+    
+<!--     插入角色自身信息 -->
+    <!-- 当我们向角色表中插入一条数据,表中会自动生成一个主键id,我们需要拿到这个主键id,后面菜单和角色表要用
+     useGeneratedKeys: 表示我们要使用SysRole对象的主键值  ,
+     keyProperty:表示将主键值写给SysRole对象的id属性(底层调用setId方法)-->
+    <insert id="insertObject"
+            parameterType="com.jt.sys.entity.SysRole"
+            useGeneratedKeys="true"
+            keyProperty="id">
+         insert into sys_roles 
+         (id,name,note,createdTime,modifiedTime,
+         createdUser,modifiedUser) 
+         values
+         (null,#{name},#{note},now(),now(),
+         #{createdUser},#{modifiedUser})
+    </insert>
+   
+ <!--    删除角色自身信息 -->
+    <delete id="deleteObject">
+         delete 
+         from sys_roles
+         where id=#{id}
+    </delete> 
+    
+    <sql id="queryWhereId">
+         <where>
+            <if test="name!=null and name!=''">
+                name like concat("%",#{name},"%")
+            </if>
+         </where>
+    </sql>
+    <select id="findPageObjects"
+            resultType="com.jt.sys.entity.SysRole">
+         select *
+         from sys_roles
+         <include refid="queryWhereId"/>
+         order by createdTime desc
+         limit #{startIndex},#{pageSize}
+    </select>
+    <select id="getRowCount"
+            resultType="int">
+           select count(*) 
+           from sys_roles
+           <include refid="queryWhereId"/>
+    </select>
+    
+    
+</mapper>
+
+
+

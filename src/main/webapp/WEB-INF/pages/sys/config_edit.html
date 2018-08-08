@@ -1,0 +1,114 @@
+<!-- Horizontal Form -->
+ <div class="box box-info">
+
+      <!-- /.box-header -->
+      <!-- form start -->
+      <form class="form-horizontal">
+        <div class="box-body">
+          <div class="form-group">
+            <label for="nameId" class="col-sm-2 control-label">参数名</label>
+
+            <div class="col-sm-10">
+              <input type="text" class="form-control" name="name" id="nameId" placeholder="名称">
+            </div>
+          </div>
+           <div class="form-group">
+            <label for="valueId" class="col-sm-2 control-label">参数值</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" name="name" id="valueId" placeholder="名称">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="noteId" class="col-sm-2 control-label">描述</label>
+
+            <div class="col-sm-10">
+              <input type="text" class="form-control" name="note" id="noteId" placeholder="描述">
+            </div>
+          </div>
+        </div>
+        <!-- /.box-body -->
+ 
+      </form>
+    </div>
+    <script type="text/javascript">
+	
+    $(function(){
+   	 //模态框的保存按钮上注册点击事件
+   	 $("#myModal")
+   	 .on("click",".btn-save",doSaveOrUpdate);
+   	 
+   //(starter.上的模态框只有一个,当我们每次点击添加按钮,就会加载此edit页面,
+   	//每次都会在".btn-save"上添加一次点击事件,注册多次就会执行多次,因此就会重复向数据库中添加数据)
+   	
+   	//注册模态框隐藏时的事件监听(参数e代表触发的事件,可有可无),'hidden.bs.modal'这是固定形式
+   	//完成的效果就是当模态框每次隐藏的时候,清理模态框
+   	 $('#myModal').on('hidden.bs.modal',function (e) {
+   		 //移除myMoal对象上绑定的事件
+   		 //假如不移除有可能会重现表单重复提交
+   		 $("#myModal").off();
+   		 //移除模态框绑定的数据(如果不清除的话,当点击添加的时候也模态框中还是会有上次修改残留下的数据)
+   		 $("#myModal").removeData();
+   	 });
+   	 //从模态框上获取绑定的数据
+   	 var rowData=$("#myModal").data("rowData");
+   	 //假如模态框上有数据,则初始化表单数据
+   	 if(rowData)doInitEditFormData(rowData);
+    });
+    
+    
+    
+    //初始化表单数据
+    function doInitEditFormData(rowData){
+   	 $("#nameId").val(rowData.name);
+   	 $("#valueId").val(rowData.value);
+   	 $("#noteId").val(rowData.note)
+    }
+    
+    //添加,修改操作
+    function doSaveOrUpdate(){
+   	 //1.获得表单数据
+   	 var data=doGetEditFormData();
+   	 
+   	 var rowData=$("#myModal").data("rowData");
+   	 //如果模态框上有数据,那么说明是个修改项,假如是修改需要再向服务端提交一个id值,那么取出id值
+   	 if(rowData)data.id=rowData.id;
+   	 
+   	 //2.区分url,一个添加的url,一个修改的url
+   	 var insertUrl="config/doSaveObject.do";
+   	 var updateUrl="config/doUpdateObject.do";
+   	 //假如rowData有数据那么执行updateUrl,如果没有那么执行insertUrl
+   	 var url=rowData?updateUrl:insertUrl;
+   	 
+   	 //3.异步提交数据
+   	 $.post(url,data,function(result){
+   		 if(result.state==1){
+   			 alert(result.message);
+   			 doGetObjects();
+   			 // 隐藏模态框
+   			 $("#myModal").modal("hide");
+   		 }else{
+   			 alert(result.message);
+   		 }
+   	 });
+    }
+    
+    
+    //获取编辑页面表单数据
+    function doGetEditFormData(){
+   	 var params={
+   		 name:$("#nameId").val(),
+   		 value:$("#valueId").val(),
+   		 note:$("#noteId").val()
+   	 };
+   	 return params;
+    }
+    
+    </script>
+    
+    
+    
+    
+    
+    
+    
+    

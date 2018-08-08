@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jt.sys.dao.SysConfigDao">
+	<!-- 添加 -->
+	<insert id="insertObject">
+       insert into sys_configs
+       (name,value,note,createdTime,
+       modifiedTime,createdUser,modifiedUser)
+       values
+       (#{name},#{value},#{note},now(),now(),
+       #{createdUser},#{modifiedUser})
+    </insert>
+	
+	<!-- 修改提交后更新数据 -->
+	<update id="updateObject">
+       update sys_configs
+       set 
+       name=#{name},
+       value=#{value},
+       note=#{note},
+       modifiedTime=now(),
+       modifiedUser=#{modifiedUser}
+       where id=#{id}
+    </update>
+	
+	<!-- 批量删除 -->
+  	<delete id="deleteObjects">
+        delete from sys_configs
+        where id in <!-- (1,2,3,4,5) -->
+        <foreach collection="ids"
+                 open="("
+                 close=")"
+                 separator=","
+                 item="item"><!-- item指ids这个集合数组中的某一个元素 -->
+               #{item}
+        </foreach>
+    </delete>
+    
+    <select id="findPageObjects"
+            resultType="com.jt.sys.entity.SysConfig">
+         select *
+         from sys_configs
+         <include refid="queryWhereId"/>
+         order by createdTime desc
+         limit #{startIndex},#{pageSize}
+    </select>
+    
+    <select id="getRowCount"
+            resultType="int">
+          select count(*) 
+          from sys_configs
+          <include refid="queryWhereId"/>
+    </select>
+    <!-- 借助此元素对共性数据进行提取 -->
+    <sql id="queryWhereId">
+          <where>
+            <if test="name!=null and name!=''">
+               name like concat("%",#{name},"%")
+            </if>
+          </where>
+    </sql>
+</mapper>
+
+
