@@ -11,13 +11,22 @@ public interface SysRoleMenuDao {
 	 * 而且很少有表与表之间建立物理关系,都是逻辑上的关系,建立物理关系了就拆不开了
 	 */
 	
-	/**
+/*shiro中有这个可代替它	*//**
 	 * 基于角色查询菜单id
 	 * @param roleId
 	 * @return
-	 */
+	 *//*
 	List<Integer> findMenuIdsByRoleId(
-			Integer roleId);
+			Integer roleId);*/
+	
+	 
+	 /**Shiro 框架授权流程应用
+	  * 基于角色id查找菜单id信息
+	  * @param roleIds 一个用户可以有多个角色
+	  * @return
+	  */
+	List<Integer> findMenuIdsByRoleId(
+				@Param("roleIds")Integer...roleIds);
 	
 	 /**
 	  * 插入角色和菜单的关系数据 ,sys_role_menus这个表,
@@ -42,5 +51,9 @@ public interface SysRoleMenuDao {
 	  * @param roleId
 	  * @return
 	  */
+	 
 	 int deleteObjectsByRoleId(Integer roleId);
+	 
+
+
 }

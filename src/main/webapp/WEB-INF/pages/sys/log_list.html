@@ -28,7 +28,7 @@
 							<th>操作</th>
 							<th>请求方法</th>
 							<th>请求参数</th>
-							<th>创建时间</th>
+							<th>IP地址</th>
 							<th>执行时间</th>
 						</tr>
 					</thead>
@@ -44,7 +44,7 @@
 </div>
 <script type="text/javascript">
    $(document).ready(function(){
-	   $("#pageId").load("pageUI.do",function(){
+	   $("#pageId").load("doPageUI.do",function(){
 		   doGetObjects();
 	   });
 	   $(".input-group-btn")
@@ -52,29 +52,29 @@
    });
    //处理查询按钮事件
    function doQueryObjects(){
-	   $(".pagination").data("pageCurrent",1);
+	   $("#pageId").data("pageCurrent",1);
 	   doGetObjects();
    }
    //页面加载完成异步加载当前页数据
    function doGetObjects(){
 	   var url="log/doFindPageObjects.do";
 	   var pageCurrent=
-	   $(".pagination").data("pageCurrent");
+	   $("#pageId").data("pageCurrent");
 	   if(!pageCurrent)pageCurrent=1;
 	   var params={"pageCurrent":pageCurrent}
 	   params.username=$("#searchNameId").val().trim();
 	   console.log(params);
 	   $.getJSON(url,params,function(result){
 		   if(result.state==1){
-			  setTableBodyRows(result.data.records);
-			  setPagination(result.data);
+			  doSetTableBodyRows(result.data.records);
+			  doSetPagination(result.data);
 		   }else{
 			  alert(result.message);
 		   }
 	   });
    }
    //通过服务端返回的数据初始化页面
-   function setTableBodyRows(data){
+   function doSetTableBodyRows(data){
 	  //1.获取tbody对象，并清空内容
 	  var tBody=$("#tbodyId");
 	  tBody.empty();
@@ -92,7 +92,7 @@
 		     "<td>"+data.operation+"</td>"+
 		     "<td>"+data.method+"</td>"+
 		     "<td>"+data.params+"</td>"+
-		     "<td>"+data.createdTime+"</td>"+
+		     "<td>"+data.ip+"</td>"+
 		     "<td>"+data.time+"</td>";
 	  return tds;
    }

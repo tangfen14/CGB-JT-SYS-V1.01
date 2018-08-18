@@ -1,7 +1,9 @@
 package com.jt.sys.service;
 
+import java.util.List;
 import java.util.Map;
 
+import com.jt.common.vo.CheckBox;
 import com.jt.common.vo.PageObject;
 import com.jt.sys.entity.SysRole;
 
@@ -36,4 +38,6 @@ public interface SysRoleService {
 	 PageObject<SysRole> findPageObjects(
 			 String name,
 			 Integer pageCurrent);
+	 
+	 List<CheckBox> findObjects();
 }

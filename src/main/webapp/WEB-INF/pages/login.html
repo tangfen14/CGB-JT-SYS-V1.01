@@ -90,11 +90,12 @@
 	  var url="doLogin.do";
 	  $.post(url,params,function(result){
 		  if(result.state==1){
-			//跳转到indexUI对应的页面
-			location.href="indexUI.do?t="+Math.random();
+			//跳转到indexUI对应的页面   ,为了解决缓存,加入随机数 
+			location.href="doIndexUI.do?t="+Math.random();
 		  }else{
 			$(".login-box-msg").html(result.message); 
 		  }
+		  //下行可写可不写,防止刷新时重复提交 
 		  return false;
 	  });
   }

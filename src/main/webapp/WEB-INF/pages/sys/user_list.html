@@ -47,116 +47,177 @@
 </div>
 <script type="text/javascript">
    $(document).ready(function(){
-	   $("#pageId").load("pageUI.do",function(){
+	   $("#pageId").load("doPageUI.do",function(){
 		   doGetObjects();
 	   });
 	   $(".input-group-btn")
-	   .on("click",".btn-search",doQueryObjects)
-	   .on("click",".btn-add,.btn-update",doAddOrUpdate);
-	   $("tbody").on("click",".btn-valid",doValidById);
+	   .on("click",".btn-add,.btn-update",doLoadEditUI);
+	   
+	   $("#tbodyId")
+	   .on("click",".btn-valid",doValidById)
+
    });
    
-   function doAddOrUpdate(){
-	   //1.判定点击的对象
-	   var title;
-	   if($(this).hasClass("btn-add")){
-		   title="添加用户";
-		   doLoadEditPage(title);
-	   }else if($(this).hasClass("btn-update")){
-		   title="修改用户";
-		   var id=getCheckedId();
-		   console.log("id="+id)
-		   $(".container-fluid").data("id",id);
-		  
-		   doLoadEditPage(title);
+   function doLoadEditUI(){
+		  var flag=true;
+		  //1.定义标题(添加或修改)
+		  var title;
+		  if($(this).hasClass("btn-add")){
+			  title="用户添加";
+		  }else{
+			  title="用户修改";
+	          var id=doGetCheckedId();
+	          //若没有选中,则弹框并返回
+		      if (!id){alert("请先选择");return;}
+		//此处下行方法一定为同步方法,假如为异步,若出异常result.state==0,而flag依然为true,那就不会执行下面的return操作出去
+			  flag=doFindObjectById(id);
+		  }
+		  if(!flag)return;
+		  //2.异步加载页面
+		  var url="user/doUserEditUI.do";
+		  $("#mainContentId").load(url,function(){
+			  $(".box-title").html(title);
+		  });
+	   };
+
+	   function doGetCheckedId(){
+			 return $("tbody input[name='checkItem']:checked").val();
+		  }
+
+	   function doFindObjectById(id){
+		   var flag=true;
+		   var url="user/doFindObjectById.do";
+		   //获取用户选择的id
+	var params={"id":id};
+		  //根据id执行查询操作
+		   $.ajax({url:url ,data:params,async:false,//false指同步
+				   success:function(result){
+					 if(result.state==1){
+						$("#mainContentId").data("rowData",result.data);
+						console.log(result.data);
+					 }else{
+						 alert(result.message);
+						 flag=false;
+					 }
+				 }
+		   });
+		  return flag;
 	   }
-   }
-   function getCheckedId(){
-	   return $("tbody input[name='radioId']:checked").val();
-   }
-   
-   function doLoadEditPage(title){
-	   var url="user/editUI.do"
-	   $(".container-fluid").load(url,function(){
-		   $(".box-title").html(title);
-	   }) 
-   }
-   
-   function doValidById(){
-	   console.log("doValidById");
+
+ 
+    function doValidById(){
+	   //1.获取对象id,validId的值
+	   var btn=$(this);//获取点击的button对象 , this执行调用dom对象
+	   var user=btn.parents("tr").data("rowData");
+		//基于id去禁用或者启用
+	   var id=user.id;
+	   var valid=user.valid;
+	   //2.构建url,参数对象
 	   var url="user/doValidById.do";
-	   var id=$(this).parents("tr").data("id");
-	   var valid=$(this).parents("tr").data("valid");
-	   var params={"id":id,"valid":valid?0:1};
-       var btn=$(this);
+	//  ?0:1  这种写法每次运行都会在0和1之间切换,(如果原先valid是1那么参数就传0,如果原来是0,就传1)
+	   var params={"id":id,"valid":valid?0:1}
+	   //3.发送异步请求,更新数据
 	   $.post(url,params,function(result){
-    	   if(result.state==1){
-    		   alert(result.message);
-    		   //doGetObjects();//重新查询刷新
-    		   //优化方式实现
-    		   doEditRow(btn,valid);
-    	   }else{
-    		   alert(result.message);
-    	   }
-       })    
-   }    
-   function doEditRow(obj,valid){
-	   console.log(obj);
-	   //1.修改按钮上的内容
-	   $(obj).html(valid?"启用":"禁用");
-	   //2.获取当前行tr对象，然后重新绑定新的值
-	   var tr=$(obj).parents("tr");
-	   tr.data("valid",valid?0:1);
-	   //3.修改tr中第5个td中的内容(查询API文档)
-	   tr.find("td:eq(4)").text(valid?"禁用":"启用");
-   }
+		   if(result.state==1){
+			   alert(result.message);
+			   // doGetObjects();//一种刷新方式
+			   //思考:为什么下行方法获取button对象 btn=$(this)要在方法外提前提出来?
+//答:如果写成doEditRow($(this),valid);那么这个$(this)就指的是当前方法(function(result){)
+				//注意:这里的参数valid是原先的数据状态 
+			    doEditRow(btn,valid); //一种局部刷新方式,减轻服务端的压力 
+		   }else{
+			   alert(result.message);
+		   }
+	   })
+   } 
+  
+
+   
+   function doEditRow(btn,valid){
+ 	  //1.修改按钮上内容(1代表true,0代表false),所以valid是1的话就显示启用
+//而此时传入的valid是原先的状态值 ,比如原先的状态值是1,那么点击后btn上就应该显示启用,第六栏的状态文本处应修改为禁用 
+ 	  btn.html(valid?"启用":"禁用");
+ 	  //2.修改td中元素内容
+ 	  var tr=btn.parents("tr");
+ 	  //修改状态栏的文本,与btn键的相反 
+ 	  tr.find("td:eq(5)").html(valid?"禁用":"启用");
+   //3.修改并重新绑定数据(如果不重新绑定的话,用户如果连续点按钮就有问题)
+   var rowData=tr.data("rowData");
+   rowData.valid=valid?0:1;//  ?0:1  这种写法每次运行都会在0和1之间切换
+   tr.data("rowData",rowData);
+} 
+
+
    //处理查询按钮事件
-   function doQueryObjects(){
-	   $(".pagination").data("pageCurrent",1);
+  function doQueryObjects(){
+	   //1.初始化分页pageCurrent的值
+	   $("#pageId").data("pageCurrent",1);
+	   //2.异步查询
 	   doGetObjects();
    }
-   //页面加载完成异步加载当前页数据
+
+   
+   
    function doGetObjects(){
-	   var url="user/doFindPageObjects.do";
-	   var pageCurrent=
-	   $(".pagination").data("pageCurrent");
+	   //url
+	   var　url="user/doFindPageObjects.do";
+	   //获取参数数据
+	   var pageCurrent=$("#pageId").data("pageCurrent");
 	   if(!pageCurrent)pageCurrent=1;
-	   var params={"pageCurrent":pageCurrent}
-	   params.username=$("#searchNameId").val().trim();
-	   console.log(params);
+	   var  params={"pageCurrent":pageCurrent}
+	   //获取查询参数username的值(此步骤在查询时使用)
+	   var username=$("#searchNameId").val();
+	   if(username)params.username=username;
+	   //发送异步请求
 	   $.getJSON(url,params,function(result){
-		   if(result.state==1){
-			  setTableBodyRows(result.data.records);
-			  setPagination(result.data);
-		   }else{
-			  alert(result.message);
-		   }
+		   doHandleResponseResult(result);
 	   });
    }
+  
+  function doHandleResponseResult(result){
+if(result.state==1){
+	console.log(result.data)
+			doSetTableBodyRows(result.data.records);
+			doSetPagination(result.data);
+		}else{
+		    alert(result.message);
+		}
+}
+
    //通过服务端返回的数据初始化页面
-   function setTableBodyRows(data){
-	  //1.获取tbody对象，并清空内容
-	  var tBody=$("#tbodyId");
-	  tBody.empty();
-	  //2.迭代data内容将数据追加到tbody中
-	  for(var i in data){
-		  var tr=$("<tr></tr>");
-		  tr.data("id",data[i].id);
-		  tr.data("valid",data[i].valid);
-		  var tds="<td><input type='radio' name='radioId' value='"+data[i].id+"' ></td>"+
-		     "<td>"+data[i].username+"</td>"+
-		     "<td>"+data[i].deptName+"</td>"+
-		     "<td>"+data[i].email+"</td>"+
-		     "<td>"+data[i].mobile+"</td>"+
-		     "<td>"+(data[i].valid?"启用":"禁用")+"</td>"+
-		     "<td>"+data[i].createdTime+"</td>"+
-		     "<td>"+data[i].modifiedTime+"</td>"+
-		     "<td><button type='button' class='btn btn-default btn-valid'>"+(data[i].valid?"禁用":"启用")+"</button></td>";
-		 tr.append(tds);
-		 tBody.append(tr);
-	  }
-	
+   function doSetTableBodyRows(records){
+	   //1.获取body对象,并清空内容
+	   var tBody=$("#tbodyId");
+	   tBody.empty();
+	   //2.迭代records元素,将内容添加到body
+	   for(var i in records){
+		   //2.1.创建tr对象
+		   var tr=$("<tr></tr>");
+		   tr.data("rowData",records[i]);
+		   //2.2创建td元素
+		   var tds=doCreateTds(records[i]);
+		   //2.3将tr追加到tr中
+		   tr.append(tds);
+		   //2.4将tr追加到tbody中
+		   tBody.append(tr);
+	   }
    }
+
+   function doCreateTds(data){
+	   //console.log("data.id="+data.id);
+	   var tds=
+	 	 "<td><input type='radio' name='checkItem' value='"+data.id+"'/></td>"+
+		 "<td>"+data.username+"</td>"+
+		 "<td>"+data.sysDept.name+"</td>"+
+		 "<td>"+data.email+"</td>"+
+		 "<td>"+data.mobile+"</td>"+
+		 "<td>"+(data.valid?'启用':'禁用')+"</td>"+
+		 "<td>"+data.createdTime+"</td>"+
+		 "<td>"+data.modifiedTime+"</td>"+
+		 "<td><button type='button' class='btn btn-default btn-valid'>"+(data.valid?'禁用':'启用')+"</button></td>";
+	   return tds;
+   }
+
 </script>
 
 

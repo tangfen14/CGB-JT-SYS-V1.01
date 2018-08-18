@@ -4,10 +4,17 @@ import java.util.List;
 
 import org.apache.ibatis.annotations.Param;
 
+import com.jt.common.vo.CheckBox;
 import com.jt.sys.entity.SysRole;
+import com.jt.sys.entity.SysUser;
 
 public interface SysRoleDao {
     
+
+
+	
+	List<CheckBox> findObjects();
+	
 	int updateObject(SysRole entity);
 	/**
 	 * 基于id查询角色自身信息

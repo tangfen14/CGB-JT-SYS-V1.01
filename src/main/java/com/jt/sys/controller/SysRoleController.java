@@ -75,6 +75,15 @@ public class SysRoleController {
 		 sysRoleService.deleteObject(id);
 		 return new JsonResult("delete ok");
 	 }
+	 
+	 
+	  @RequestMapping("doFindObjects")
+	  @ResponseBody
+	  public JsonResult doFindObjects(){
+	  	 return new JsonResult(
+	  				 sysRoleService.findObjects());
+	  }
+
 }
 
 

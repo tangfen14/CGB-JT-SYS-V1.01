@@ -3,6 +3,8 @@ package com.jt.sys.dao;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.ibatis.annotations.Param;
+
 import com.jt.common.vo.Node;
 import com.jt.sys.entity.SysMenu;
 
@@ -46,4 +48,12 @@ public interface SysMenuDao {
 	int insertObject(SysMenu entity);
 	
 	int updateObject(SysMenu entity);
+	
+	/**5.	Shiro 框架授权流程应用
+	 * 基于菜单id查找权限标识信息
+	 * @param menuIds
+	 * @return
+	 */
+	List<String> findPermissions(
+			@Param("menuIds") Integer... menuIds);
 }

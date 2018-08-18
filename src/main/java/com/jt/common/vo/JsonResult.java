@@ -21,6 +21,11 @@ public class JsonResult implements Serializable {
 		this.state=0;//表示代表错误
 		this.message=e.getMessage();
 	}
+	/*登录错误后传入状态值和msg*/
+	public JsonResult(Integer state,String message){
+		this.state=state;//错误
+		this.message=message;
+	}
 	public Integer getState() {
 		return state;
 	}

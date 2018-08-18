@@ -2,10 +2,35 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jt.sys.dao.SysUserRoleDao">
-    
-    <!-- 基于角色id删除角色菜单关系数据 -->
-    <delete id="deleteObjectsByRoleId">
-        delete from sys_user_roles
-        where role_id=#{roleId}
-    </delete>
+
+	<!-- 基于角色id删除角色菜单关系数据 -->
+	<delete id="deleteObjectsByRoleId">
+		delete from sys_user_roles
+		where role_id=#{roleId}
+	</delete>
+
+	<insert id="insertObject">
+		insert into sys_user_roles
+		(user_id,role_id)
+		values
+		<foreach collection="roleIds" separator="," item="item">
+			(#{userId},#{item})
+		</foreach>
+	</insert>
+
+
+	<!-- 基于用户id查询角色id 注意这里虽然返回的是一个List集合,但是resultType的值是个int,
+	此参数代表的是 一行记录要映射的类型 -->
+	<select id="findRoleIdsByUserId" resultType="int">
+		select role_id
+		from
+		sys_user_roles
+		where user_id=#{userId}
+	</select>
+
+	<delete id="deleteObjectsByUserId" parameterType="int">
+		delete from sys_user_roles
+		where user_id=#{userId}
+	</delete>
+
 </mapper>

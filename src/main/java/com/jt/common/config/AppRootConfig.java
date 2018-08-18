@@ -1,22 +1,35 @@
 package com.jt.common.config;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 
 import javax.sql.DataSource;
 
+import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.realm.AuthorizingRealm;
+import org.apache.shiro.spring.LifecycleBeanPostProcessor;
+import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
+import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
+import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import com.alibaba.druid.pool.DruidDataSource;
 
@@ -25,8 +38,12 @@ import com.alibaba.druid.pool.DruidDataSource;
 @ComponentScan(value="com.jt",
 excludeFilters={@Filter(type=FilterType.ANNOTATION,classes={Controller.class})})
 @MapperScan(basePackages="com.jt.**.dao")
+@EnableAspectJAutoProxy//启用AOP注解模式(自动为目标对象创建代理对象)
+@EnableTransactionManagement//启用注解事务管理(默认查找当前的事务管理器对象)
 public class AppRootConfig {//service,dao
-     /**配置数据源对象:druid*/
+     
+	
+	/**配置数据源对象:druid*/
 	 @Bean(value="dataSource",initMethod="init",destroyMethod="close")
 	 public DataSource newDruidDataSource(
 			@Value("${jdbcDriver}")String driverClass,
@@ -49,12 +66,115 @@ public class AppRootConfig {//service,dao
 		 SqlSessionFactoryBean fBean=new SqlSessionFactoryBean();
 		 fBean.setDataSource(dataSource);
 		 Resource[] mapperLocations=
-		 new PathMatchingResourcePatternResolver()
+				 	new PathMatchingResourcePatternResolver()
 		 .getResources("classpath:mapper/sys/*.xml");
 		 fBean.setMapperLocations(mapperLocations);
 		 return fBean;
 	 }
 	 
+	 
+	 
+	 //=======shiro=============
+	 
+	 /**
+	  * 让系统支持多个properties文件应用
+	  * @return
+	  */
+	 @Bean
+	 public PropertySourcesPlaceholderConfigurer newPropertyPlaceholderConfigurer(){
+		 return new PropertySourcesPlaceholderConfigurer();
+	 }
+	 
+	 /**
+	  * 配置shiro核心權限管理對象
+	  * @param realm
+	  * @return
+	  */
+	 @Bean("securityManager ")
+	 public DefaultWebSecurityManager 
+	      newDefaultWebSecurityManager(
+	    		  AuthorizingRealm realm){
+		 DefaultWebSecurityManager sManager=
+				 		new DefaultWebSecurityManager();
+		 sManager.setRealm(realm);
+		// sManager.setCacheManager(cacheManager);
+		 return sManager;
+	 }
+	 /**
+	  * 配置Shiro的過濾器Bean工廠
+	  * @param securityManager
+	  * @return
+	  * import org.apache.shiro.mgt.SecurityManager;需手动引入apache包下的SecurityManager
+	  */
+	 @Bean("shiroFilterFactoryBean")
+	 public ShiroFilterFactoryBean newShiroFilterFactoryBean(
+	 			SecurityManager securityManager){//shiro 包
+	 		ShiroFilterFactoryBean bean=
+	 				new ShiroFilterFactoryBean();
+	 		bean.setSecurityManager(securityManager);
+	 	    //当此用户是一个非认证用户,需要先登陆进行认证
+	 		bean.setLoginUrl("/doLoginUI.do");
+	 		//定義請求過濾規則（也可以设置在一个property文件里）
+	 		LinkedHashMap<String,String> fcMap=
+	 				new LinkedHashMap<>();
+	 		//将webapp下的一些文件夹下的文件设置运行匿名访问
+	 		fcMap.put("/bower_components/**","anon");//anon表示允许匿名访问
+	 		fcMap.put("/build/**", "anon");
+	 		fcMap.put("/dist/**","anon");
+	 		fcMap.put("/plugins/**","anon");
+	 		fcMap.put("/doLogin.do","anon");//登录界面也允许匿名访问
+	 		fcMap.put("/doLogout.do ","logout");//logout表示退出时，访问doLogout.do这个地址
+	 		//除了以上资源，其他都设置需要认证才能访问
+	 		fcMap.put("/**", "authc");//必须授权才能访问
+	 		bean.setFilterChainDefinitionMap(fcMap);
+	 		return bean;
+	 }
+	 /***
+	  * 配置shiro框架组件的生命周期管理对象
+	  * @return
+	  */
+	 @Bean("lifecycleBeanPostProcessor")
+	 public LifecycleBeanPostProcessor 
+	        newLifecycleBeanPostProcessor(){
+		 //直接new出来，底层会自动关联
+	 	return new LifecycleBeanPostProcessor();
+	 }
+
+     /**配置负责为Bean对象(需要授权访问的方法所在的对象)
+      * 创建代理对象的Bean组件*/
+	 @DependsOn(value="lifecycleBeanPostProcessor")
+	 @Bean
+	 public DefaultAdvisorAutoProxyCreator newDefaultAdvisorAutoProxyCreator(){
+	   return new DefaultAdvisorAutoProxyCreator();
+	 }
+     /**
+      * 配置授权属性应用对象(在执行授权操作时需要用到此对象)
+      * @param securityManager
+      * @return
+      */
+	 @Bean
+	 public AuthorizationAttributeSourceAdvisor 
+	        newAuthorizationAttributeSourceAdvisor(
+	 		SecurityManager securityManager){
+	 		AuthorizationAttributeSourceAdvisor bean=
+	 					new AuthorizationAttributeSourceAdvisor();
+	 		bean.setSecurityManager(securityManager);
+	 		return bean;
+	 }
+	 
+	 
+	 //======transaction manager,配置事务管理器===========
+	 
+	 @Bean("txManager")
+	 public DataSourceTransactionManager 
+	        newDataSourceTransactionManager(
+			 @Autowired DataSource dataSource){
+		 DataSourceTransactionManager tManager=
+			new DataSourceTransactionManager();
+		 tManager.setDataSource(dataSource);
+		 return tManager;
+	 }
+
 }
 
 

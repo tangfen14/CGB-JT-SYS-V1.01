@@ -6,8 +6,10 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.jt.common.vo.CheckBox;
 import com.jt.common.vo.PageObject;
 import com.jt.common.vo.ServiceException;
 import com.jt.sys.dao.SysRoleDao;
@@ -54,6 +56,7 @@ public class SysRoleServiceImpl implements SysRoleService{
 	/**
 	 * 保存角色以及角色和菜单关系数据
 	 */
+	@Transactional
 	@Override
 	public int saveObject(SysRole entity, 
 			Integer[] menuIds) {
@@ -133,5 +136,12 @@ public class SysRoleServiceImpl implements SysRoleService{
 		//3.返回
 		return rows;
 	}
+
+	
+	
+	  @Override
+	    public List<CheckBox> findObjects() {
+	     	return sysRoleDao.findObjects();
+	    }
 
 }

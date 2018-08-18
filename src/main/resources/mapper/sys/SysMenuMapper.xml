@@ -2,70 +2,73 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jt.sys.dao.SysMenuDao">
-    
-    <select id="findObjects"
-            resultType="map">
-          <!-- 方案1 自关联-->
-          <!--  c表是这一级表,p表是上一级表,
-          		c.*,p.name  的意思是c表中的所有数据加上p表中的name数据,
-          		c和p表中都有name,如果名字一样,往map中放时k相同,值会覆盖,因此给p.name起个别名 parentName;  
-                left join特点:左边满足和不满足条件都显示,右边只显示满足条件的,比如当parentName为空的时,也会显示此条信息null,
-                	而如果用join内连接的话,就不显示 -->
-          <!-- 
-          select c.*,p.name parentName
-          from sys_menus c left join sys_menus p
-          on c.parentId=p.id
-          -->
-          <!-- 方案2 子查询-->
-          select c.*,(select name 
-                      from sys_menus p
-                      where c.parentId=p.id) parentName
-          from sys_menus c
-     
-    </select>
-   
-   
-       <select id="getChildCount"
-            resultType="int">
-          select count(*)
-          from sys_menus
-          where parentId=#{id}        
-    </select>
-    
-    <delete id="deleteObject">
-          delete from sys_menus
-          where id=#{id}
-    </delete>
-    
-    
-    <select id="findZtreeMenuNodes"
-        resultType="com.jt.common.vo.Node">
-        select id,name,parentId
-        from sys_menus        
-    </select>
-    
-    <insert id="insertObject" parameterType="com.jt.sys.entity.SysMenu"><!-- 这里的parameterType参数可以省略不写 -->
-    insert into sys_menus 
-    (name,url,type,sort,note,parentId,permission,createdTime,modifiedTime,createdUser,modifiedUser) 
-    values
-    (#{name},#{url},#{type},#{sort},#{note},#{parentId},#{permission},now(),now(),#{createdUser},#{modifiedUser})
 
-    </insert>
-    
-        <update id="updateObject"
-            parameterType="com.jt.sys.entity.SysMenu">
-         update sys_menus
-         set
-           name=#{name},
-           type=#{type},
-           sort=#{sort},
-           url=#{url},
-           parentId=#{parentId},
-           permission=#{permission},
-           modifiedUser=#{modifiedUser},
-           modifiedTime=now()
-        where id=#{id}
-    </update>
+	<select id="findObjects" resultType="map">
+		<!-- 方案1 自关联 -->
+		<!-- c表是这一级表,p表是上一级表, c.*,p.name 的意思是c表中的所有数据加上p表中的name数据, c和p表中都有name,如果名字一样,往map中放时k相同,值会覆盖,因此给p.name起个别名 
+			parentName; left join特点:左边满足和不满足条件都显示,右边只显示满足条件的,比如当parentName为空的时,也会显示此条信息null, 
+			而如果用join内连接的话,就不显示 -->
+		<!-- select c.*,p.name parentName from sys_menus c left join sys_menus 
+			p on c.parentId=p.id -->
+		<!-- 方案2 子查询 -->
+		select c.*,(select name
+		from sys_menus p
+		where c.parentId=p.id) parentName
+		from sys_menus c
+
+	</select>
+
+
+	<select id="getChildCount" resultType="int">
+		select count(*)
+		from sys_menus
+		where parentId=#{id}
+	</select>
+
+	<delete id="deleteObject">
+		delete from sys_menus
+		where id=#{id}
+	</delete>
+
+
+	<select id="findZtreeMenuNodes" resultType="com.jt.common.vo.Node">
+		select id,name,parentId
+		from sys_menus
+	</select>
+
+	<insert id="insertObject" parameterType="com.jt.sys.entity.SysMenu"><!-- 这里的parameterType参数可以省略不写 -->
+		insert into sys_menus
+		(name,url,type,sort,note,parentId,permission,createdTime,modifiedTime,createdUser,modifiedUser)
+		values
+		(#{name},#{url},#{type},#{sort},#{note},#{parentId},#{permission},now(),now(),#{createdUser},#{modifiedUser})
+
+	</insert>
+
+	<update id="updateObject" parameterType="com.jt.sys.entity.SysMenu">
+		update sys_menus
+		set
+		name=#{name},
+		type=#{type},
+		sort=#{sort},
+		url=#{url},
+		parentId=#{parentId},
+		permission=#{permission},
+		modifiedUser=#{modifiedUser},
+		modifiedTime=now()
+		where id=#{id}
+	</update>
+	
+	<!--5.	Shiro 框架授权流程应用实现,  基于菜单id查找权限标识信息)-->
+	<select id="findPermissions" resultType="string">
+		select permission <!-- sys:user:update -->
+		from sys_menus
+		where id in
+		<foreach collection="menuIds" open="(" close=")" separator=","
+			item="item">
+			#{item}
+		</foreach>
+	</select>
+
 </mapper>
 
 
